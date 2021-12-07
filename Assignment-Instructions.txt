@@ -1,0 +1,73 @@
+# Write a program that emulates an Etch-A-Sketch
+# Initialize your Bitmap Display to 512 x 512 with Unit Height/Width of 8
+# Allocate memory in the Heap to hold your 512 x 512 display.
+# Draw a nice border that would be the edge of the Etch-A-Sketch - Make it your own.
+# Draw a white dot in the exact middle.  
+# Initialize any variables you need to hold state.
+# Set the initial color to the color of your choice
+# Start an Infinite Loop that will do nothing.  Maybe have it do a few random
+# lines of code because MARS gets glitchy if it has nothing to do. 
+# Write a reentrant subroutine called handleKeyInput that will be called by the Exception Handling Routine
+#  It will be passed the key pressed in $a0
+#  Based off of that key, it will update the Bitmap Display
+#  You need to map the keypad to the commands of your choice.  For example (Don't use these)
+#
+#  J says to draw a pixel at the current location and move one to the left
+#  K says to draw a pixel at the current location and move down one
+#  L says to draw a pixel at the current location and move right
+#  I says to draw a pixel at the current location and move up
+#  Y moves to draw a pixel at the current location and up/left
+#  O moves to draw a pixel at the current location and up/right
+#  N moves to draw a pixel at the current location and down/left
+#  M moves to draw a pixel at the current location and down/right
+#  D deletes the current location, but does not move.
+#  Q exits the program
+
+#  R changes current color to Red
+#  G changes current color to Green
+#  B changes current color to Blue
+#  It may be easier if each of these key commands is a subroutine in itself.
+#  i.e.  The exception handler calls handleKeyInput and that method is
+#        mostly a switch statement that determines which of the keyHandler
+#        methods should be called.  You could call each subroutine handleKey#
+#        where # is the key pressed.  Each subroutine has to make sure
+#        it follows the rules for that movement.  
+# Requirements.  
+# 1.  The cursor will not move off the screen.  You need to decide if it wraps around or
+#     simply stays at the current location
+# 2.  Also choose two other characteristics of your choosing
+#      A. S Saves the current screen to file and L loads the saved screen in from file
+#      B. Shift (any character move from above) draws to the edge of the screen
+#      C. Instead of just RGB, have it change by a gradiant.  i.e. if they hit R,
+#         they add 30 to the current R value.
+#      D. If they write to a location that is already colored, they get the Blue 
+#         Screen of Death i.e.) like Snake.
+#      E. Or if they write to a location that is already colored, it does a Bit/Wise 
+#         or of the existing color and the new color.  (Blends the two)
+#      F. Write the actual game Snake instead.
+
+# Snake.
+#   
+# Write a program that emulates Snake
+# Initialize your Bitmap Display to 512 x 512 with Unit Height/Width of 8
+# Allocate memory in the Heap to hold your 512 x 512 display.
+# Draw a nice border that would be the edge of the Etch-A-Sketch - Make it your own.
+# Draw a white dot in the exact middle.  
+# Initialize any variables you need to hold state.
+# Initialize $s0 to hold the current keystroke.  Start with blank
+# Draw a random red dot on the screen
+# Set the initial color to the color of your choice
+# Start an Infinite Loop that will sleep for 500 milliseconds.  Then
+#   it will check $s0 to see if a key was pressed.  It will then jump to the handleKey#
+#   subroutine to update the screen.  Once that subroutine is finished, it will
+#   sleep again for 500 milliseconds.
+# Snake Keystrokes - if $s0 holds any of the following keys, then update the screen
+#  J says to draw a pixel at the current location and move one to the left
+#  K says to draw a pixel at the current location and move down one
+#  L says to draw a pixel at the current location and move right
+#  I says to draw a pixel at the current location and move up
+
+#  If the red dot is hit, the sleep speed lowers by 20 and a new red dot is drawn on
+#  the screen.  This could be tough.  It has to be on a blank pixel.
+#  If a line is crossed, the program should blow up.
+#  I think this spec is incomplete.  Maybe watch a video on Snake?
