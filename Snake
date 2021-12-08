@@ -6,16 +6,42 @@
 #        Set Bitmap Display unit width/height to 8 and display width/height to 512. Set run speed to a value lower than max. 
 #        Control snake using w, a, s, and d for up, left, down, and right respectively inside the keyboard portion of the simulator. 
 
+.eqv HEAP_ADDR 0x80000180
 .eqv WHITE 0x00ffffff
 .eqv DARK_GREY 0x005d5d5d
 .eqv GREEN 0x0053760a
 .eqv RED   0x00ff0000
 
+.data
+	Sleep_Time: .word 500
+
 .text
 	.globl main
 main:
+	jal Heap_Alloc # $s0 holds heap addr
+	jal Initialize_Game
+	
 	Inf_Loop:
+	lw $a0, Sleep_Time # Sleep time between moves
+	li $v0, 32 # Sleep syscall code
+	syscall
+	b Inf_Loop
+	
+.text	
+End_Game: 
+	li $v0, 10 # Terminate syscall code
+	syscall
+	
+.text
+Heap_Alloc: # Allocates memory for bitmap display, 4,096 words.
+	li $a0, 4096 # 4,096 words in bitmap display
+	mul $a0, $a0, 4 # 4 bytes per word correction
+	li $v0, 9 # Heap allocate syscall code
+	syscall
+	
+.text
+Initialize_Game: # Draw border and background, set snake to center, and set start direction
+	jr
 	
 	
-	
-.ktext
+.ktext HEAP_ADDR
