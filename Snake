@@ -1,0 +1,21 @@
+# Program: Snake
+# Author: Cameron Baker
+# Date: 2021-12-07
+# Description: Implementation of Snake game using bitmap display and MMIO simulator.
+# Usage: Launch and connect the Bitmap Display and the Keyboard and Display MMIO Simulator. 
+#        Set Bitmap Display unit width/height to 8 and display width/height to 512. Set run speed to a value lower than max. 
+#        Control snake using w, a, s, and d for up, left, down, and right respectively inside the keyboard portion of the simulator. 
+
+.eqv WHITE 0x00ffffff
+.eqv DARK_GREY 0x005d5d5d
+.eqv GREEN 0x0053760a
+.eqv RED   0x00ff0000
+
+.text
+	.globl main
+main:
+	Inf_Loop:
+	
+	
+	
+.ktext
