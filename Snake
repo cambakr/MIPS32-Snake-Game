@@ -6,7 +6,8 @@
 #        Set Bitmap Display unit width/height to 8 and display width/height to 512. Set run speed to a value lower than max. 
 #        Control snake using w, a, s, and d for up, left, down, and right respectively inside the keyboard portion of the simulator. 
 
-.eqv HEAP_ADDR 0x80000180
+.eqv HEAP_ADDR 0x10040000
+.eqv PIXEL_COUNT 4096
 .eqv WHITE 0x00ffffff
 .eqv DARK_GREY 0x005d5d5d
 .eqv GREEN 0x0053760a
@@ -18,7 +19,7 @@
 .text
 	.globl main
 main:
-	jal Heap_Alloc # $s0 holds heap addr
+	jal Heap_Alloc # Bitmap Display Heap Allocation
 	jal Initialize_Game
 	
 	Inf_Loop:
@@ -38,10 +39,56 @@ Heap_Alloc: # Allocates memory for bitmap display, 4,096 words.
 	mul $a0, $a0, 4 # 4 bytes per word correction
 	li $v0, 9 # Heap allocate syscall code
 	syscall
+	jr $ra
 	
 .text
 Initialize_Game: # Draw border and background, set snake to center, and set start direction
-	jr
+	li $t0, 0 # Loop counter
+	li $t1, WHITE # Background Color
+	INIT_FOR_BACK: # Set background to white
+		bge $t0, PIXEL_COUNT, INIT_FOR_BACK_END # Loop conditional
+		mul $t2, $t0, 4 # Word size correction
+		add $t2, $t2, HEAP_ADDR # Pixel location
+		sw $t1, ($t2) # Store color in pixel
+		addi $t0, $t0, 1 # Increment counter
+		b INIT_FOR_BACK # Restart loop
+	INIT_FOR_BACK_END:
+	
+	li $t0, 0 # Loop counter
+	li $t1, DARK_GREY # Background Color
+	li $t3, 63 # Top bits
+	li $t4, 4031 # Bottom bits
+	li $t5, 64
+	li $t7, 127
+	INIT_FOR_BORD: # Set background to white
+		bge $t0, PIXEL_COUNT, INIT_FOR_BORD_END # Loop conditional
+		
+		ble $t0, $t3, DRAW_BORD_PIXEL # Top pixel line check
+		bge $t0, $t4, DRAW_BORD_PIXEL # Bottom pixel line check
+		div $t0, $t7 # Mod (%) for pixel location in right column. beq would have also sufficed but I already wrote this.
+		mfhi $t6 
+		beqz $t6, DRAW_BORD_PIXEL_RIGHT # Right pixel line check
+		div $t0, $t5 # Mod (%) for pixel location in left column.
+		mfhi $t6
+		beqz $t6, DRAW_BORD_PIXEL # Left pixel line check
+		b SKIP_DRAW_BORD_PIXEL # If no conditions met then increment and loop
+		
+		DRAW_BORD_PIXEL_RIGHT:
+		addi $t7, $t7, 64 # Border correction for right side comparison.
+		DRAW_BORD_PIXEL:
+		mul $t2, $t0, 4 # Word size correction
+		add $t2, $t2, HEAP_ADDR # Pixel location
+		sw $t1, ($t2) # Store color in pixel
+		
+		SKIP_DRAW_BORD_PIXEL:
+		addi $t0, $t0, 1 # Increment counter
+		b INIT_FOR_BORD # Restart loop
+		
+	INIT_FOR_BORD_END:
 	
 	
-.ktext HEAP_ADDR
+	
+	jr $ra
+	
+	
+.ktext 0x80000180
