@@ -15,12 +15,17 @@
 
 .data
 	Sleep_Time: .word 500
+	Snake_Heap_Base_Addr: .word # SET TO MIDDLE ADDR
+	Snake_Heap_Head_Addr: .word # SET EQUAL TO Snake_Heap_Base_Addr
+	Snake_Heap_Current_Addr: .word # SET EQUAL TO Snake_Heap_Head_Addr BEFORE EVERY Snake_Update SUBROUTINE
 
 .text
 	.globl main
 main:
 	jal Heap_Alloc # Bitmap Display Heap Allocation
-	jal Initialize_Game
+	UNWRITTEN # Heap Allocation for Snake Location Tracking
+	jal Initialize_Game # Draw background, draw border, set starting snake location and set location to white
+	UNWRITTEN # Allow for interupts
 	
 	Inf_Loop:
 	lw $a0, Sleep_Time # Sleep time between moves
