@@ -53,13 +53,7 @@ main:
 	syscall
 	
 	b Inf_Loop
-	
-	
-	
-	
-	
-	
-	
+
 .text	
 End_Game:
 	li $a0, COLOR_RED
@@ -69,11 +63,7 @@ End_Game:
 	syscall
 	
 	jr $ra # Pointless lil guy
-	
-	
-	
-	
-	
+
 .text
 Make_Food:
 	
@@ -90,23 +80,12 @@ Heap_Alloc: # Allocates memory for bitmap display, 4,096 words.
 	li $v0, 9 # Heap allocate syscall code
 	syscall
 	jr $ra
-	
-	
-	
-	
-	
-	
-	
+
 .text
 Enable_Interrupts:
 	li $t0, 2
 	sb $t0, KEYBOARD_INTERUPT_BIT_ADDR
 	jr $ra
-	
-	
-	
-	
-	
 	
 .text
 Initialize_Game: # Draw border and background, set snake to center, and set start direction
@@ -158,13 +137,7 @@ Initialize_Game: # Draw border and background, set snake to center, and set star
 	add $sp, $sp, 4
 	
 	jr $ra
-	
-	
-	
-	
-	
-	
-	
+
 .text 	
 Fill_Screen: # $a0 for color
 	li $t0, 0 # Loop counter
@@ -179,21 +152,8 @@ Fill_Screen: # $a0 for color
 	INIT_FOR_BACK_END:
 	jr $ra	
 
-
-	
-	
-	
-	
-
-
 .text
 Direction_To_Addr:
-
-
-
-
-
-
 
 
 .ktext 0x80000180
