@@ -79,6 +79,10 @@ Update_Snake:
 		
 		jal Make_Food
 		
+		lw $t7, Sleep_Time
+		addi $t7, $t7, -1
+		sw $t7, Sleep_Time
+		
 		b SKIP_UPDATE
 	NOT_FOOD:
 		lw $t0, Snake_Heap_Head_Addr # Get head addr. $t0 will be starting current address.
@@ -237,32 +241,36 @@ Fill_Screen: # $a0 for color
 	jr $ra	
 
 .ktext 0x80000180
-	addi $sp, $sp, -4
+	addi $sp, $sp, -12
 	sw $ra, 0($sp)
+	sw $s0, 4($sp)
+	sw $s1, 8($sp)
 	jal Handle_Input
 	lw $ra, 0($sp)
-	addi $sp, $sp, 4
+	lw $s0, 4($sp)
+	lw $s1, 8($sp)
+	addi $sp, $sp, 12
 	eret
 	
 Handle_Input:
 	lw $s0, KEYBOARD_DATA_ADDR
 	bne $s0, 97, NEXT1
-	li $t0, -4
-	sw $t0, Direction
+	li $s1, -4
+	sw $s1, Direction
 	b NEXT4
 	NEXT1:
 	bne $s0, 119, NEXT2
-	li $t0, -256
-	sw $t0, Direction
+	li $s1, -256
+	sw $s1, Direction
 	b NEXT4
 	NEXT2:
 	bne $s0, 115, NEXT3
-	li $t0, 256
-	sw $t0, Direction
+	li $s1, 256
+	sw $s1, Direction
 	b NEXT4
 	NEXT3:
 	bne $s0, 100, NEXT4
-	li $t0, 4
-	sw $t0, Direction
+	li $s1, 4
+	sw $s1, Direction
 	NEXT4:
 	jr $ra
