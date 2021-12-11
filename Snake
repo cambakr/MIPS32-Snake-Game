@@ -15,18 +15,11 @@
 .eqv COLOR_GREEN 0x0053760a
 .eqv COLOR_RED 0x00ff0000
 
-
-
-
 .data
 	Sleep_Time: .word 3000
 	Snake_Heap_Base_Addr: .word 0 # SET TO MIDDLE ADDR
 	Snake_Heap_Head_Addr: .word 0 # SET EQUAL TO Snake_Heap_Base_Addr
 	Direction: .word 0
-
-
-
-
 
 .text
 	.globl main
@@ -49,15 +42,61 @@ main:
 		b WHILE_WAIT
 	WHILE_WAIT_END:
 	
-	
-	
 	Inf_Loop:
-	jal Direction_To_Addr
+	jal Update_Snake
 	lw $a0, Sleep_Time # Sleep time between moves
 	li $v0, 32 # Sleep syscall code
 	syscall
 	
 	b Inf_Loop
+
+.text
+Update_Snake:
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+
+	lw $t0, Snake_Heap_Head_Addr
+	lw $t1, ($t0)
+	lw $t2, Direction
+	add $t1, $t1, $t2 # Add direction to head location to get next location address
+	lw $t3, ($t1) # Load color from next location
+	
+	bne $t3, COLOR_DARK_GREY, NOT_BORD # Branch if color isn't dark grey, otherwise fail
+		jal End_Game
+	NOT_BORD:
+	
+	bne $t3, COLOR_RED, NOT_FOOD # Branch if color isn't red, otherwise grow.
+		addi $t0, $t0, 4 # New head address offset
+		sw $t0, Snake_Heap_Head_Addr # Store updated head addr
+		sw $t1, ($t0) # Store bitmap location of new head
+		li $t4, COLOR_WHITE
+		sw $t4, ($t1) # Update color of new snake head
+		
+		jal Make_Food
+		
+		b SKIP_UPDATE
+		
+	NOT_FOOD:
+		
+	
+	
+	
+	SKIP_UPDATE:	
+		li $t5, Snake_Heap_Head_Addr
+		li $t6, Snake_Heap_Base_Addr
+		Self_Eat_Loop:
+		addi $t5, $t5, -4 # Access previous snake link
+		lw $t7 ($t5)
+		beq $t1, $t7, Self_Eat 
+		
+		
+		
+		ble $t5, $t6
+	
+
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	jr $ra
 
 .text	
 End_Game:
@@ -168,21 +207,6 @@ Fill_Screen: # $a0 for color
 		b INIT_FOR_BACK # Restart loop
 	INIT_FOR_BACK_END:
 	jr $ra	
-
-.text
-Border_Check:
-
-
-
-.text
-Update_Snake:
-
-
-
-.text
-Self_Eat_Check:
-
-
 
 #.ktext 0x80000180
 	addi $sp, $sp, -4
