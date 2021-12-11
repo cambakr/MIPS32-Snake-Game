@@ -8,17 +8,25 @@
 
 .eqv HEAP_ADDR 0x10040000
 .eqv KEYBOARD_INTERUPT_BIT_ADDR 0xffff0000
+.eqv KEYBOARD_DATA_ADDR 0xffff0004
 .eqv PIXEL_COUNT 4096
 .eqv COLOR_WHITE 0x00ffffff
 .eqv COLOR_DARK_GREY 0x005d5d5d
 .eqv COLOR_GREEN 0x0053760a
 .eqv COLOR_RED 0x00ff0000
 
+
+
+
 .data
 	Sleep_Time: .word 3000
 	Snake_Heap_Base_Addr: .word 0 # SET TO MIDDLE ADDR
 	Snake_Heap_Head_Addr: .word 0 # SET EQUAL TO Snake_Heap_Base_Addr
-	Snake_Heap_Current_Addr: .word 0 # SET EQUAL TO Snake_Heap_Head_Addr BEFORE EVERY Snake_Update SUBROUTINE
+	Direction: .word 1
+
+
+
+
 
 .text
 	.globl main
@@ -27,16 +35,22 @@ main:
 	jal Heap_Alloc # Bitmap Display Heap Allocation
 	jal Heap_Alloc # Snake Tracking Heap Allocation
 	sw $v0, Snake_Heap_Base_Addr # Retreive Snake Tracking Heap Location
-	sw $v0, Snake_Heap_Head_Addr # Initialize head
 	
 	jal Initialize_Game # Draw background, draw border, set starting snake location and set location to white
 	
 	Inf_Loop:
+#	jal Direction_To_Addr
 	lw $a0, Sleep_Time # Sleep time between moves
 	li $v0, 32 # Sleep syscall code
 	syscall
 	
 	b Inf_Loop
+	
+	
+	
+	
+	
+	
 	
 .text	
 End_Game:
@@ -46,6 +60,14 @@ End_Game:
 	li $v0, 10 # Terminate syscall code
 	syscall
 	
+	jr $ra # Pointless lil guy
+	
+	
+	
+	
+	
+	
+	
 .text
 Heap_Alloc: # Allocates memory for bitmap display, 4,096 words.
 	li $a0, PIXEL_COUNT # 4,096 words in bitmap display
@@ -54,11 +76,22 @@ Heap_Alloc: # Allocates memory for bitmap display, 4,096 words.
 	syscall
 	jr $ra
 	
+	
+	
+	
+	
+	
+	
 .text
 Enable_Interrupts:
 	li $t0, 2
 	sb $t0, KEYBOARD_INTERUPT_BIT_ADDR
 	jr $ra
+	
+	
+	
+	
+	
 	
 .text
 Initialize_Game: # Draw border and background, set snake to center, and set start direction
@@ -67,7 +100,7 @@ Initialize_Game: # Draw border and background, set snake to center, and set star
 	
 	li $a0, COLOR_GREEN
 	jal Fill_Screen
-	
+
 	li $t0, 0 # Loop counter
 	li $t1, COLOR_DARK_GREY # Background Color
 	li $t3, 63 # Top bits
@@ -76,7 +109,6 @@ Initialize_Game: # Draw border and background, set snake to center, and set star
 	li $t7, 127
 	INIT_FOR_BORD: # Set background to white
 		bge $t0, PIXEL_COUNT, INIT_FOR_BORD_END # Loop conditional
-		
 		ble $t0, $t3, DRAW_BORD_PIXEL # Top pixel line check
 		bge $t0, $t4, DRAW_BORD_PIXEL # Bottom pixel line check
 		div $t0, $t7 # Mod (%) for pixel location in right column. beq would have also sufficed but I already wrote this.
@@ -86,24 +118,37 @@ Initialize_Game: # Draw border and background, set snake to center, and set star
 		mfhi $t6
 		beqz $t6, DRAW_BORD_PIXEL # Left pixel line check
 		b SKIP_DRAW_BORD_PIXEL # If no conditions met then increment and loop
-		
 		DRAW_BORD_PIXEL_RIGHT:
 		addi $t7, $t7, 64 # Border correction for right side comparison.
 		DRAW_BORD_PIXEL:
 		mul $t2, $t0, 4 # Word size correction
 		add $t2, $t2, HEAP_ADDR # Pixel location
 		sw $t1, ($t2) # Store color in pixel
-		
 		SKIP_DRAW_BORD_PIXEL:
 		addi $t0, $t0, 1 # Increment counter
 		b INIT_FOR_BORD # Restart loop
-		
 	INIT_FOR_BORD_END:
+	
+	li $t1, 2080
+	mul $t1, $t1, 4
+	li $t0, HEAP_ADDR
+	add $t0, $t0, $t1
+	sw $t0, Snake_Heap_Base_Addr
+	sw $t0, Snake_Heap_Head_Addr
+	
+	li $t2, COLOR_WHITE
+	sw $t2, ($t0)
 	
 	lw $ra, 0($sp)
 	add $sp, $sp, 4
 	
 	jr $ra
+	
+	
+	
+	
+	
+	
 	
 .text 	
 Fill_Screen: # $a0 for color
@@ -119,4 +164,50 @@ Fill_Screen: # $a0 for color
 	INIT_FOR_BACK_END:
 	jr $ra	
 
+
+	
+	
+	
+	
+
+
+.text
+Direction_To_Addr:
+
+
+
+
+
+
+
+
 .ktext 0x80000180
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	jal Handle_Input
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	eret
+	
+Handle_Input:
+	lw $s0, KEYBOARD_DATA_ADDR
+	bne $s0, 97, NEXT1
+	li $t0, -1
+	sw $t0, Direction
+	b NEXT4
+	NEXT1:
+	bne $s0, 119, NEXT2
+	li $t0, -64
+	sw $t0, Direction
+	b NEXT4
+	NEXT2:
+	bne $s0, 115, NEXT3
+	li $t0, 64
+	sw $t0, Direction
+	b NEXT4
+	NEXT3:
+	bne $s0, 100, NEXT4
+	li $t0, 1
+	sw $t0, Direction
+	NEXT4:
+	jr $ra
