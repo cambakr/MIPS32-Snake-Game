@@ -40,6 +40,11 @@ main:
 	
 	WHILE_WAIT:
 		lw $t0, Direction
+		
+		li $a0, 500 # Sleep time between moves
+		li $v0, 32 # Sleep syscall code
+		syscall
+		
 		bne $t0, 0, WHILE_WAIT_END
 		b WHILE_WAIT
 	WHILE_WAIT_END:
@@ -47,7 +52,7 @@ main:
 	
 	
 	Inf_Loop:
-#	jal Direction_To_Addr
+	jal Direction_To_Addr
 	lw $a0, Sleep_Time # Sleep time between moves
 	li $v0, 32 # Sleep syscall code
 	syscall
@@ -66,12 +71,22 @@ End_Game:
 
 .text
 Make_Food:
-	
-	
-	
-	
-	
-	
+	GEN_LOOP:
+	li $a1, 4097 # Random gen range
+	li $v0, 42 # Random gen with range syscall code
+	syscall
+	li $v0, 1 
+	syscall
+	move $t0, $a0 # Retrieve random number
+	mul $t0, $t0, 4 # Word size adjustment
+	li $t1, HEAP_ADDR # Get bitmap heap address
+	add $t0, $t0, $t1 # Add offset to address
+	lw $t1, ($t0) # Load color code from calculated address
+	li $t2, COLOR_GREEN
+	bne $t1, $t2, GEN_LOOP # Repeat if location is not green
+	li $t3, COLOR_RED
+	sw $t3, ($t0) # Store red it space was green
+	jr $ra
 	
 .text
 Heap_Alloc: # Allocates memory for bitmap display, 4,096 words.
@@ -133,6 +148,8 @@ Initialize_Game: # Draw border and background, set snake to center, and set star
 	li $t2, COLOR_WHITE
 	sw $t2, ($t0)
 	
+	jal Make_Food
+	
 	lw $ra, 0($sp)
 	add $sp, $sp, 4
 	
@@ -153,10 +170,21 @@ Fill_Screen: # $a0 for color
 	jr $ra	
 
 .text
-Direction_To_Addr:
+Border_Check:
 
 
-.ktext 0x80000180
+
+.text
+Update_Snake:
+
+
+
+.text
+Self_Eat_Check:
+
+
+
+#.ktext 0x80000180
 	addi $sp, $sp, -4
 	sw $ra, 0($sp)
 	jal Handle_Input
