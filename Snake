@@ -1,6 +1,6 @@
 # Program: Snake
 # Author: Cameron Baker
-# Date: 2021-12-07
+# Date Created: 2021-12-07
 # Description: Implementation of Snake game using bitmap display and MMIO simulator.
 # Usage: Launch and connect the Bitmap Display and the Keyboard and Display MMIO Simulator. 
 #        Set Bitmap Display unit width/height to 8 and display width/height to 512. Set run speed to a value lower than max. 
@@ -22,7 +22,7 @@
 	Sleep_Time: .word 3000
 	Snake_Heap_Base_Addr: .word 0 # SET TO MIDDLE ADDR
 	Snake_Heap_Head_Addr: .word 0 # SET EQUAL TO Snake_Heap_Base_Addr
-	Direction: .word 1
+	Direction: .word 0
 
 
 
@@ -37,6 +37,14 @@ main:
 	sw $v0, Snake_Heap_Base_Addr # Retreive Snake Tracking Heap Location
 	
 	jal Initialize_Game # Draw background, draw border, set starting snake location and set location to white
+	
+	WHILE_WAIT:
+		lw $t0, Direction
+		bne $t0, 0, WHILE_WAIT_END
+		b WHILE_WAIT
+	WHILE_WAIT_END:
+	
+	
 	
 	Inf_Loop:
 #	jal Direction_To_Addr
@@ -61,6 +69,13 @@ End_Game:
 	syscall
 	
 	jr $ra # Pointless lil guy
+	
+	
+	
+	
+	
+.text
+Make_Food:
 	
 	
 	
