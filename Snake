@@ -16,7 +16,7 @@
 .eqv COLOR_RED 0x00ff0000
 
 .data
-	Sleep_Time: .word 3000
+	Sleep_Time: .word 500
 	Snake_Heap_Base_Addr: .word 0 # SET TO MIDDLE ADDR
 	Snake_Heap_Head_Addr: .word 0 # SET EQUAL TO Snake_Heap_Base_Addr
 	Direction: .word 0
@@ -28,6 +28,7 @@ main:
 	jal Heap_Alloc # Bitmap Display Heap Allocation
 	jal Heap_Alloc # Snake Tracking Heap Allocation
 	sw $v0, Snake_Heap_Base_Addr # Retreive Snake Tracking Heap Location
+	sw $v0, Snake_Heap_Head_Addr # Retreive Snake Tracking Heap Location
 	
 	jal Initialize_Game # Draw background, draw border, set starting snake location and set location to white
 	
@@ -52,13 +53,17 @@ main:
 
 .text
 Update_Snake:
-	addi $sp, $sp, -4
+	addi $sp, $sp, -12
+	sw $s0, 4($sp)
+	sw $s1, 8($sp)
 	sw $ra, 0($sp)
 
 	lw $t0, Snake_Heap_Head_Addr
 	lw $t1, ($t0)
+	move $s1, $t1 # Save location of last head for update loop
 	lw $t2, Direction
-	add $t1, $t1, $t2 # Add direction to head location to get next location address
+	add $t1, $t1, $t2 # Add direction to head bitmap location to get next location address
+	move $s0, $t1 # Save next location
 	lw $t3, ($t1) # Load color from next location
 	
 	bne $t3, COLOR_DARK_GREY, NOT_BORD # Branch if color isn't dark grey, otherwise fail
@@ -75,27 +80,52 @@ Update_Snake:
 		jal Make_Food
 		
 		b SKIP_UPDATE
-		
 	NOT_FOOD:
-		
-	
-	
+		lw $t0, Snake_Heap_Head_Addr # Get head addr. $t0 will be starting current address.
+		lw $t3, Snake_Heap_Base_Addr # Get base addr
+		move $t2, $s0 # Get the next location for head
+		li $t4, COLOR_WHITE
+		sw $t4, ($t2) # Set next bitmap location of head to white
+		ble $t0, $t3, SKIP_UPDATE_LOOP # While current address $t0 does not equal or is greater than base address $t3
+		UPDATE_LOOP:
+			ble $t0, $t3, UPDATE_LOOP_END # While current address $t0 does not equal or is greater than base address $t3
+			lw $t1, ($t0) # Load bitmap current location in current address
+			sw $t2, ($t0) # Set location for current addr ($t0) to next location $t2
+			move $t2, $t1 # Move current location $t1 to next location $t2
+			addi $t0, $t0, -4 # Decrement current address $t0 by 4
+			b UPDATE_LOOP # Loop
+		UPDATE_LOOP_END:
+#		addi $t0, $t0, 4
+		SKIP_UPDATE_LOOP:
+		lw $t1, ($t0) # Save location at ($t0) into $t1
+		sw $t2, ($t0) # Store bitmap location $t2 into ($t0)
+		# Set previous bitmap location $t1 to green as long as bitmap location of base ($t3) and bitmap location of $t1 don't match
+		lw $t4, ($t3)
+		beq $t4, $t1, SKIP_TAIL
+		li $t3, COLOR_GREEN
+		sw $t3, ($t1)
+		SKIP_TAIL:
 	
 	SKIP_UPDATE:	
-		li $t5, Snake_Heap_Head_Addr
-		li $t6, Snake_Heap_Base_Addr
-		Self_Eat_Loop:
+		# Self eat check
+		lw $t5, Snake_Heap_Head_Addr # Get head addr
+		lw $t6, Snake_Heap_Base_Addr # Get base addr
+		lw $t1, ($t5) # Load bitmap location of head
+		SELF_EAT_LOOP:
+		ble $t5, $t6, SELF_EAT_LOOP_END # Exit loop if current link addr matches base addr
 		addi $t5, $t5, -4 # Access previous snake link
-		lw $t7 ($t5)
-		beq $t1, $t7, Self_Eat 
-		
-		
-		
-		ble $t5, $t6
+		lw $t7, ($t5) # Load bitmap location from that previous snake link
+		beq $t1, $t7, SELF_EAT # Branch if head location and previous link location are matching.
+		b SELF_EAT_LOOP
+		SELF_EAT:
+		jal End_Game
+		SELF_EAT_LOOP_END:
 	
 
 	lw $ra, 0($sp)
-	addi $sp, $sp, 4
+	lw $s0, 4($sp)
+	lw $s1, 8($sp)
+	addi $sp, $sp, 12
 	jr $ra
 
 .text	
@@ -113,8 +143,6 @@ Make_Food:
 	GEN_LOOP:
 	li $a1, 4097 # Random gen range
 	li $v0, 42 # Random gen with range syscall code
-	syscall
-	li $v0, 1 
 	syscall
 	move $t0, $a0 # Retrieve random number
 	mul $t0, $t0, 4 # Word size adjustment
@@ -181,8 +209,8 @@ Initialize_Game: # Draw border and background, set snake to center, and set star
 	mul $t1, $t1, 4
 	li $t0, HEAP_ADDR
 	add $t0, $t0, $t1
-	sw $t0, Snake_Heap_Base_Addr
-	sw $t0, Snake_Heap_Head_Addr
+	lw $t2, Snake_Heap_Base_Addr
+	sw $t0, ($t2)
 	
 	li $t2, COLOR_WHITE
 	sw $t2, ($t0)
@@ -208,7 +236,7 @@ Fill_Screen: # $a0 for color
 	INIT_FOR_BACK_END:
 	jr $ra	
 
-#.ktext 0x80000180
+.ktext 0x80000180
 	addi $sp, $sp, -4
 	sw $ra, 0($sp)
 	jal Handle_Input
@@ -219,22 +247,22 @@ Fill_Screen: # $a0 for color
 Handle_Input:
 	lw $s0, KEYBOARD_DATA_ADDR
 	bne $s0, 97, NEXT1
-	li $t0, -1
+	li $t0, -4
 	sw $t0, Direction
 	b NEXT4
 	NEXT1:
 	bne $s0, 119, NEXT2
-	li $t0, -64
+	li $t0, -256
 	sw $t0, Direction
 	b NEXT4
 	NEXT2:
 	bne $s0, 115, NEXT3
-	li $t0, 64
+	li $t0, 256
 	sw $t0, Direction
 	b NEXT4
 	NEXT3:
 	bne $s0, 100, NEXT4
-	li $t0, 1
+	li $t0, 4
 	sw $t0, Direction
 	NEXT4:
 	jr $ra
