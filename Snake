@@ -3,7 +3,7 @@
 # Date Created: 2021-12-07
 # Description: Implementation of Snake game using bitmap display and MMIO simulator.
 # Usage: Launch and connect the Bitmap Display and the Keyboard and Display MMIO Simulator. 
-#        Set Bitmap Display unit width/height to 8 and display width/height to 512. Set run speed to a value lower than max. 
+#        Set Bitmap Display unit width/height to 8 and display width/height to 512. 
 #        Control snake using w, a, s, and d for up, left, down, and right respectively inside the keyboard portion of the simulator. 
 
 .eqv HEAP_ADDR 0x10040000
@@ -253,24 +253,33 @@ Fill_Screen: # $a0 for color
 	eret
 	
 Handle_Input:
-	lw $s0, KEYBOARD_DATA_ADDR
+	lw $s0, KEYBOARD_DATA_ADDR # Get ascii char
+	
+	# Handle 'a'
 	bne $s0, 97, NEXT1
 	li $s1, -4
 	sw $s1, Direction
 	b NEXT4
+	
+	# Handle 's'
 	NEXT1:
 	bne $s0, 119, NEXT2
 	li $s1, -256
 	sw $s1, Direction
 	b NEXT4
+	
+	# Handle 'w'
 	NEXT2:
 	bne $s0, 115, NEXT3
 	li $s1, 256
 	sw $s1, Direction
 	b NEXT4
+	
+	# Handle 'd'
 	NEXT3:
 	bne $s0, 100, NEXT4
 	li $s1, 4
 	sw $s1, Direction
+	
 	NEXT4:
 	jr $ra
