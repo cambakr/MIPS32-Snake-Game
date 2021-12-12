@@ -6,14 +6,14 @@
 #        Set Bitmap Display unit width/height to 8 and display width/height to 512. 
 #        Control snake using w, a, s, and d for up, left, down, and right respectively inside the keyboard portion of the simulator. 
 
-.eqv HEAP_ADDR 0x10040000
-.eqv KEYBOARD_INTERUPT_BIT_ADDR 0xffff0000
-.eqv KEYBOARD_DATA_ADDR 0xffff0004
-.eqv PIXEL_COUNT 4096
-.eqv COLOR_WHITE 0x00ffffff
-.eqv COLOR_DARK_GREY 0x005d5d5d
-.eqv COLOR_GREEN 0x0053760a
-.eqv COLOR_RED 0x00ff0000
+.eqv HEAP_ADDR 0x10040000 # Address of bitmap display when allocated in heap
+.eqv KEYBOARD_INTERUPT_BIT_ADDR 0xffff0000 # Keyboard interupt control addr
+.eqv KEYBOARD_DATA_ADDR 0xffff0004 # Keyboard interupt ascii data
+.eqv PIXEL_COUNT 4096 # 64x64 pixel bitmap display size
+.eqv COLOR_WHITE 0x00ffffff # Hex white
+.eqv COLOR_DARK_GREY 0x005d5d5d # Hex grey
+.eqv COLOR_GREEN 0x0053760a # Hex green
+.eqv COLOR_RED 0x00ff0000 # Hex red
 
 .data
 	Sleep_Time: .word 500
@@ -35,7 +35,7 @@ main:
 	WHILE_WAIT:
 		lw $t0, Direction
 		
-		li $a0, 500 # Sleep time between moves
+		li $a0, 500 # Sleep time for wait
 		li $v0, 32 # Sleep syscall code
 		syscall
 		
