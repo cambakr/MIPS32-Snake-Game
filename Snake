@@ -16,10 +16,10 @@
 .eqv COLOR_RED 0x00ff0000 # Hex red
 
 .data
-	Sleep_Time: .word 500
+	Sleep_Time: .word 500 # Time between moves. Default 500
 	Snake_Heap_Base_Addr: .word 0 # SET TO MIDDLE ADDR
 	Snake_Heap_Head_Addr: .word 0 # SET EQUAL TO Snake_Heap_Base_Addr
-	Direction: .word 0
+	Direction: .word 0 # Address adjustment amount. Dependent on direction input by user.
 
 .text
 	.globl main
@@ -32,23 +32,26 @@ main:
 	
 	jal Initialize_Game # Draw background, draw border, set starting snake location and set location to white
 	
+	
+	# Pauses the game until the first input is given
 	WHILE_WAIT:
-		lw $t0, Direction
+		lw $t0, Direction # Get most recent input
 		
 		li $a0, 500 # Sleep time for wait
 		li $v0, 32 # Sleep syscall code
 		syscall
 		
-		bne $t0, 0, WHILE_WAIT_END
+		bne $t0, 0, WHILE_WAIT_END # Break when input received
 		b WHILE_WAIT
 	WHILE_WAIT_END:
 	
+	
+	# Handles game logic and end conditions
 	Inf_Loop:
 	jal Update_Snake
 	lw $a0, Sleep_Time # Sleep time between moves
 	li $v0, 32 # Sleep syscall code
 	syscall
-	
 	b Inf_Loop
 
 .text
@@ -58,18 +61,20 @@ Update_Snake:
 	sw $s1, 8($sp)
 	sw $ra, 0($sp)
 
-	lw $t0, Snake_Heap_Head_Addr
-	lw $t1, ($t0)
+	lw $t0, Snake_Heap_Head_Addr # Get the address of the current head
+	lw $t1, ($t0) # Get the bitmap location of the current head
 	move $s1, $t1 # Save location of last head for update loop
-	lw $t2, Direction
+	lw $t2, Direction # Get the directon to move
 	add $t1, $t1, $t2 # Add direction to head bitmap location to get next location address
 	move $s0, $t1 # Save next location
 	lw $t3, ($t1) # Load color from next location
 	
+	# Check for border. If border is hit: fail game.
 	bne $t3, COLOR_DARK_GREY, NOT_BORD # Branch if color isn't dark grey, otherwise fail
 		jal End_Game
 	NOT_BORD:
 	
+	# Check for snake food. If food is hit: grow snake, generate new food, decrement time between round
 	bne $t3, COLOR_RED, NOT_FOOD # Branch if color isn't red, otherwise grow.
 		addi $t0, $t0, 4 # New head address offset
 		sw $t0, Snake_Heap_Head_Addr # Store updated head addr
@@ -83,14 +88,16 @@ Update_Snake:
 		addi $t7, $t7, -1
 		sw $t7, Sleep_Time
 		
-		b SKIP_UPDATE
+		b SKIP_UPDATE # Don't run snake update
 	NOT_FOOD:
+	
+	# Snake Update. Set next location to white, all snake locations get updated to the next location in the line, tail is returned to the color green.
 		lw $t0, Snake_Heap_Head_Addr # Get head addr. $t0 will be starting current address.
 		lw $t3, Snake_Heap_Base_Addr # Get base addr
 		move $t2, $s0 # Get the next location for head
 		li $t4, COLOR_WHITE
 		sw $t4, ($t2) # Set next bitmap location of head to white
-		ble $t0, $t3, SKIP_UPDATE_LOOP # While current address $t0 does not equal or is greater than base address $t3
+#		ble $t0, $t3, SKIP_UPDATE_LOOP # While current address $t0 does not equal or is greater than base address $t3
 		UPDATE_LOOP:
 			ble $t0, $t3, UPDATE_LOOP_END # While current address $t0 does not equal or is greater than base address $t3
 			lw $t1, ($t0) # Load bitmap current location in current address
@@ -99,15 +106,14 @@ Update_Snake:
 			addi $t0, $t0, -4 # Decrement current address $t0 by 4
 			b UPDATE_LOOP # Loop
 		UPDATE_LOOP_END:
-#		addi $t0, $t0, 4
-		SKIP_UPDATE_LOOP:
 		lw $t1, ($t0) # Save location at ($t0) into $t1
 		sw $t2, ($t0) # Store bitmap location $t2 into ($t0)
+		
 		# Set previous bitmap location $t1 to green as long as bitmap location of base ($t3) and bitmap location of $t1 don't match
-		lw $t4, ($t3)
-		beq $t4, $t1, SKIP_TAIL
+		lw $t4, ($t3) # Load bitmap location of tail
+		beq $t4, $t1, SKIP_TAIL # If current head location is the same as the previous tail location, then skip. Otherwise color old tail location green.
 		li $t3, COLOR_GREEN
-		sw $t3, ($t1)
+		sw $t3, ($t1) # Set previous tail location to green
 		SKIP_TAIL:
 	
 	SKIP_UPDATE:	
@@ -178,9 +184,11 @@ Initialize_Game: # Draw border and background, set snake to center, and set star
 	add $sp, $sp, -4
 	sw $ra, 0($sp)
 	
+	#Fill green background
 	li $a0, COLOR_GREEN
 	jal Fill_Screen
 
+	# Make border
 	li $t0, 0 # Loop counter
 	li $t1, COLOR_DARK_GREY # Background Color
 	li $t3, 63 # Top bits
@@ -209,16 +217,19 @@ Initialize_Game: # Draw border and background, set snake to center, and set star
 		b INIT_FOR_BORD # Restart loop
 	INIT_FOR_BORD_END:
 	
-	li $t1, 2080
-	mul $t1, $t1, 4
-	li $t0, HEAP_ADDR
-	add $t0, $t0, $t1
-	lw $t2, Snake_Heap_Base_Addr
-	sw $t0, ($t2)
+	# Initialize start location and snake tracking heap location
+	li $t1, 2080 # Center pixel
+	mul $t1, $t1, 4 # Word offset
+	li $t0, HEAP_ADDR # Load address of bitmap display
+	add $t0, $t0, $t1 # Add center pixel address offset to base address of bitmap heap
+	lw $t2, Snake_Heap_Base_Addr # Load address of snake head
+	sw $t0, ($t2) # Store bitmap location into snake head
 	
+	# Color snake head white
 	li $t2, COLOR_WHITE
 	sw $t2, ($t0)
 	
+	# Generate first food
 	jal Make_Food
 	
 	lw $ra, 0($sp)
